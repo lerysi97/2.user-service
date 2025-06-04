@@ -1,4 +1,4 @@
-package com.example.userservice;
+package com.example.userservice.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -9,6 +9,7 @@ public class User {
 
     @Id
     @GeneratedValue
+    @SuppressWarnings("unused")
     private Long id;
 
     @Column(nullable = false)
@@ -17,11 +18,13 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column
     private int age;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @SuppressWarnings("unused")
     public User(){
 
     }
@@ -56,6 +59,7 @@ public class User {
         return createdAt;
     }
 
+    @SuppressWarnings("unused")
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }

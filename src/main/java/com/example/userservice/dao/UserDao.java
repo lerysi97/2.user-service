@@ -1,11 +1,15 @@
-package com.example.userservice;
+package com.example.userservice.dao;
+
+import com.example.userservice.model.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserDao {
     void save(User user);
-    User getById (Long id);
+    Optional<User> findById(Long id);
     List<User> getAll();
     void update(User user);
-    void delete(Long id);
+    void deleteById (Long id);
+    boolean existsByEmail(String email);
 }
