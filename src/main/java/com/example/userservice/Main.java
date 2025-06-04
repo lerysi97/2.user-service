@@ -1,5 +1,6 @@
 package com.example.userservice;
 
+import com.example.userservice.dao.UserDao;
 import com.example.userservice.dao.UserDaoImpl;
 import com.example.userservice.model.User;
 
@@ -8,7 +9,7 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        UserDaoImpl userDao = new UserDaoImpl();
+        UserDao userDao = new UserDaoImpl();
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -75,7 +76,7 @@ public class Main {
                         continue;
                     }
                     long id = Long.parseLong(idInput);
-                    User user = userDao.findById(id);
+                    User user = userDao.getById(id);
                     if (user != null) {
                         System.out.println("Пользователь найден:\n" + user);
                     } else {
@@ -91,7 +92,7 @@ public class Main {
                         continue;
                     }
                     long id = Long.parseLong(idInput);
-                    User user = userDao.findById(id);
+                    User user = userDao.getById(id);
                     if (user == null) {
                         System.out.printf("Пользователь с id = %d не найден%n", id);
                         break;
@@ -144,9 +145,9 @@ public class Main {
                         continue;
                     }
                     long id = Long.parseLong(idInput);
-                    User user = userDao.findById(id);
+                    User user = userDao.getById(id);
                     if (user != null) {
-                        userDao.deleteById(id);
+                        userDao.delete(id);
                         System.out.println("Пользователь удалён:\n" + user);
                     } else {
                         System.out.printf("Пользователь с id = %d не найден%n", id);
