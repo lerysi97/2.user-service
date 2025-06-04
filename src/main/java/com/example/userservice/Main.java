@@ -1,104 +1,168 @@
 package com.example.userservice;
 
+import com.example.userservice.dao.UserDaoImpl;
+import com.example.userservice.model.User;
+
 import java.time.LocalDateTime;
 import java.util.Scanner;
 
 public class Main {
-
     public static void main(String[] args) {
-
         UserDaoImpl userDao = new UserDaoImpl();
-
         Scanner sc = new Scanner(System.in);
 
         while (true) {
-            System.out.println("Выберите действие:\n" +
-                    "1 — Создать пользователя\n" +
-                    "2 — Найти пользователя по id\n" +
-                    "3 — Обновить пользователя\n" +
-                    "4 — Удалить пользователя\n" +
-                    "5 — Выйти");
+            System.out.println("""
+                Выберите действие:
+                1 — Создать пользователя
+                2 — Найти пользователя по id
+                3 — Обновить пользователя
+                4 — Удалить пользователя
+                5 — Выйти
+            """);
 
-            int choice = sc.nextInt();
-            sc.nextLine();
+            String input = sc.nextLine().trim();
+            if (!input.matches("\\d")) {
+                System.out.println("Введите номер действия от 1 до 5.");
+                continue;
+            }
+
+            int choice = Integer.parseInt(input);
 
             switch (choice) {
-                case 1:
-                    System.out.println("Введите имя:");
-                    String name = sc.nextLine();
-                    System.out.println("Введите email:");
-                    String email = sc.nextLine();
-                    System.out.println("Введите возраст:");
-                    int age = sc.nextInt();
-                    sc.nextLine();
-                    LocalDateTime createdAt = LocalDateTime.now();
-                    User newUser = new User();
-                    newUser.setName(name);
-                    newUser.setEmail(email);
-                    newUser.setAge(age);
-                    newUser.setCreatedAt(createdAt);
+                case 1 -> {
+                    String name, email;
+                    int age;
+
+                    while (true) {
+                        System.out.print("Введите имя: ");
+                        name = sc.nextLine().trim();
+                        if (!name.isBlank()) break;
+                        System.out.println("Имя не может быть пустым.");
+                    }
+
+                    while (true) {
+                        System.out.print("Введите email: ");
+                        email = sc.nextLine().trim();
+                        if (!email.isBlank()) break;
+                        System.out.println("Email не может быть пустым.");
+                    }
+
+                    while (true) {
+                        System.out.print("Введите возраст: ");
+                        String ageInput = sc.nextLine().trim();
+                        if (ageInput.matches("\\d+")) {
+                            age = Integer.parseInt(ageInput);
+                            if (age > 0) break;
+                        }
+                        System.out.println("Возраст должен быть положительным числом.");
+                    }
+
+                    User newUser = new User(name, email, age, LocalDateTime.now());
                     try {
                         userDao.save(newUser);
                         System.out.println("Пользователь создан:\n" + newUser);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка при сохранении: " + e.getMessage());
                     }
-                    catch (org.hibernate.exception.ConstraintViolationException e) {
-                        System.out.println("Такой пользователь уже существует:\n" + newUser);
-                    }
-                    System.out.println();
-                    break;
-                case 2:
-                    System.out.println("Введите id: ");
-                    Long id = sc.nextLong();
-                    User foundUser = userDao.findById(id);
-                    if (foundUser != null) {
-                        System.out.println("Пользователь найден:\n" + foundUser);
-                    } else {
-                        System.out.printf("Пользователь с id = %d не найден", id);
-                    }
-                    System.out.println();
-                    break;
-                case 3:
-                    System.out.println("Введите id: ");
-                    Long id1 = sc.nextLong();
-                    sc.nextLine();
-                    User targetUser  = userDao.findById(id1);
-                    if (targetUser  != null) {
-                        System.out.println("Введите новое имя:");
-                        String name1 = sc.nextLine();
-                        System.out.println("Введите новый email:");
-                        String email1 = sc.nextLine();
-                        System.out.println("Введите новый возраст:");
-                        int age1 = sc.nextInt();
-                        sc.nextLine();
+                }
 
-                        targetUser .setName(name1);
-                        targetUser .setEmail(email1);
-                        targetUser .setAge(age1);
-                        userDao.update(targetUser );
-                        System.out.println("Пользователь обновлен:\n" + targetUser );
-                    } else {
-                        System.out.printf("Пользователь с id = %d не найден!", id1);
+                case 2 -> {
+                    System.out.print("Введите id: ");
+                    String idInput = sc.nextLine().trim();
+                    if (!idInput.matches("\\d+")) {
+                        System.out.println("Неверный формат id.");
+                        continue;
                     }
-                    System.out.println();
-                    break;
-                case 4:
-                    System.out.println("Введите id: ");
-                    Long id2 = sc.nextLong();
-                    User userToDelete = userDao.findById(id2);
-                    if (userToDelete != null) {
-                        userDao.deleteById(id2);
-                        System.out.println("Пользователь удален:\n" + userToDelete);
+                    long id = Long.parseLong(idInput);
+                    User user = userDao.findById(id);
+                    if (user != null) {
+                        System.out.println("Пользователь найден:\n" + user);
                     } else {
-                        System.out.printf("Пользователь с id = %d не найден!", id2);
+                        System.out.printf("Пользователь с id = %d не найден%n", id);
                     }
-                    System.out.println();
-                    break;
-                case 5:
-                    System.out.println("Выход из программы");
+                }
+
+                case 3 -> {
+                    System.out.print("Введите id пользователя для обновления: ");
+                    String idInput = sc.nextLine().trim();
+                    if (!idInput.matches("\\d+")) {
+                        System.out.println("Неверный формат id.");
+                        continue;
+                    }
+                    long id = Long.parseLong(idInput);
+                    User user = userDao.findById(id);
+                    if (user == null) {
+                        System.out.printf("Пользователь с id = %d не найден%n", id);
+                        break;
+                    }
+
+                    String name, email;
+                    int age;
+
+                    while (true) {
+                        System.out.print("Введите новое имя: ");
+                        name = sc.nextLine().trim();
+                        if (!name.isBlank()) break;
+                        System.out.println("Имя не может быть пустым.");
+                    }
+
+                    while (true) {
+                        System.out.print("Введите новый email: ");
+                        email = sc.nextLine().trim();
+                        if (!email.isBlank()) break;
+                        System.out.println("Email не может быть пустым.");
+                    }
+
+                    while (true) {
+                        System.out.print("Введите новый возраст: ");
+                        String ageInput = sc.nextLine().trim();
+                        if (ageInput.matches("\\d+")) {
+                            age = Integer.parseInt(ageInput);
+                            if (age > 0) break;
+                        }
+                        System.out.println("Возраст должен быть положительным числом.");
+                    }
+
+                    user.setName(name);
+                    user.setEmail(email);
+                    user.setAge(age);
+
+                    try {
+                        userDao.update(user);
+                        System.out.println("Пользователь обновлен:\n" + user);
+                    } catch (Exception e) {
+                        System.out.println("Ошибка при обновлении: " + e.getMessage());
+                    }
+                }
+
+                case 4 -> {
+                    System.out.print("Введите id: ");
+                    String idInput = sc.nextLine().trim();
+                    if (!idInput.matches("\\d+")) {
+                        System.out.println("Неверный формат id.");
+                        continue;
+                    }
+                    long id = Long.parseLong(idInput);
+                    User user = userDao.findById(id);
+                    if (user != null) {
+                        userDao.deleteById(id);
+                        System.out.println("Пользователь удалён:\n" + user);
+                    } else {
+                        System.out.printf("Пользователь с id = %d не найден%n", id);
+                    }
+                }
+
+                case 5 -> {
+                    System.out.println("Выход из программы.");
                     return;
-                default:
-                    System.out.println("Вы ввели неправильное значение.");
+                }
+
+                default -> System.out.println("Некорректный выбор.");
             }
+
+            System.out.println();
         }
     }
 }
+

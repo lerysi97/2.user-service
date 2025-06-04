@@ -1,11 +1,16 @@
-package com.example.userservice;
+package com.example.userservice.dao;
 
+import com.example.userservice.model.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserDaoImpl {
+
+    private static final Logger log = LoggerFactory.getLogger(UserDaoImpl.class);
 
     private final SessionFactory sessionFactory;
 
@@ -16,45 +21,74 @@ public class UserDaoImpl {
     }
 
     public void save(User user){
-        Session session = sessionFactory.openSession();
-        Transaction transaction = session.beginTransaction();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        session.persist(user);
+            try {
+                if (user == null || user.getName() == null || user.getName().isBlank() || user.getEmail() == null || user.getEmail().isBlank() || user.getAge() <= 0) {
+                    throw new IllegalArgumentException("Не может быть null.");
+                }
 
-        transaction.commit();
-        session.close();
+                session.persist(user);
+                transaction.commit();
+            } catch (Exception e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                }
+                log.error("Не удалось сохранить пользователя.", e);
+            }
+        }
     }
 
     public User findById(Long id) {
-        Session session = sessionFactory.openSession();
-        User user = session.find(User.class, id);
-        session.close();
-
-        return user;
-    }
+        try (Session session = sessionFactory.openSession()) {
+            return session.find(User.class, id);
+        } catch (Exception e) {
+            log.error("Не удалось найти пользователя по id.", e);
+            return null;
+        }
+        }
 
     public void update(User user) {
-        Session session = sessionFactory.openSession();
-        Transaction transaction = session.beginTransaction();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        session.merge(user);
+            try {
+                if (user == null || user.getId() == null) {
+                    throw new IllegalArgumentException("Не может быть null");
+                }
 
-        transaction.commit();
-        session.close();
+                session.merge(user);
+                transaction.commit();
+            } catch (Exception e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                }
+                log.error("Не удалось обновить данные пользователя.", e);
+            }
+        }
     }
 
     public void deleteById(Long id) {
-        Session session = sessionFactory.openSession();
-        Transaction transaction = session.beginTransaction();
+        try (Session session = sessionFactory.openSession()) {
+            Transaction transaction = session.beginTransaction();
 
-        User user = session.find(User.class, id);
-        if (user != null) {
-            session.remove(user);
-        } else {
-            System.out.println("Пользователь с id" + id + "не найден.");
+            try {
+                User user = session.find(User.class, id);
+                if (user != null) {
+                    session.remove(user);
+                } else {
+                    System.out.println("Пользователь не найден.");
+                }
+
+                transaction.commit();
+            } catch (Exception e) {
+                if (transaction != null && transaction.isActive()) {
+                    transaction.rollback();
+                }
+                log.error("Не удалось удалить пользователя.", e);
+            }
         }
-
-        transaction.commit();
-        session.close();
     }
 }
+

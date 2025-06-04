@@ -1,4 +1,6 @@
-package com.example.userservice;
+package com.example.userservice.dao;
+
+import com.example.userservice.model.User;
 
 import java.util.List;
 
