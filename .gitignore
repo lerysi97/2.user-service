@@ -1,2 +1,7 @@
 .idea/
 
+
+# Ignore build artifacts
+target/
+logs/
+*.log
