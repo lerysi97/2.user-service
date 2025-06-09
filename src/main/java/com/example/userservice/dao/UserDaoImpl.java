@@ -1,6 +1,5 @@
 package com.example.userservice.dao;
 
-import com.example.userservice.config.HibernateUtil;
 import com.example.userservice.model.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -15,7 +14,11 @@ public class UserDaoImpl implements UserDao {
 
     private static final Logger logger = LoggerFactory.getLogger(UserDaoImpl.class);
 
-    private final SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
+    private final SessionFactory sessionFactory;
+
+    public UserDaoImpl(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
 
     @Override
     public void save(User user) {

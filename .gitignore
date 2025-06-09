@@ -5,3 +5,4 @@ logs/
 *.log
 *.class
 .env
+Thumbs.db

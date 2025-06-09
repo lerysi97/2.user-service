@@ -13,7 +13,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        UserDaoImpl userDao = new UserDaoImpl();
+        UserDaoImpl userDao = new UserDaoImpl(HibernateUtil.getSessionFactory());
 
         Scanner sc = new Scanner(System.in);
 

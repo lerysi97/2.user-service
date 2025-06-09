@@ -1,11 +1,26 @@
 package com.example.userservice.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
 public class User {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id != null && id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
+    }
 
     @Id
     @GeneratedValue
@@ -16,7 +31,10 @@ public class User {
     private String name;
 
     @Column(nullable = false, unique = true)
+    @Email
+    @NotNull
     private String email;
+
 
     @Column
     private int age;
