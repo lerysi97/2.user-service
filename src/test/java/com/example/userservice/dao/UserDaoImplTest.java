@@ -1,4 +1,4 @@
-package com.example.userservice.service.dao;
+package com.example.userservice.dao;
 
 import com.example.userservice.dao.UserDaoImpl;
 import com.example.userservice.model.User;
@@ -33,6 +33,7 @@ public class UserDaoImplTest {
     private static SessionFactory sessionFactory;
 
     private static int emailCounter = 0;
+
     private User createTestUser() {
         String name = "Lera";
         String email = "test" + (++emailCounter) + "@test.ru";
@@ -99,6 +100,33 @@ public class UserDaoImplTest {
     }
 
     @Test
+    void save_catch() {
+        SessionFactory mockSessionFactory = Mockito.mock(SessionFactory.class);
+        Session mockSession = Mockito.mock(Session.class);
+        Transaction mockTransaction = Mockito.mock(Transaction.class);
+
+        Mockito.when(mockSessionFactory.openSession()).thenReturn(mockSession);
+        Mockito.when(mockSession.beginTransaction()).thenReturn(mockTransaction);
+        Mockito.doThrow(new RuntimeException("Ошибка при сохранении пользователя")).when(mockSession).persist(Mockito.any());
+
+        UserDaoImpl userDao = new UserDaoImpl(mockSessionFactory);
+
+        assertThrows(RuntimeException.class, () -> userDao.save(new User()));
+        Mockito.verify(mockTransaction).rollback();
+    }
+
+    @Test
+    void save_null() {
+        SessionFactory mockSessionFactory = Mockito.mock(SessionFactory.class);
+        Mockito.when(mockSessionFactory.openSession()).thenThrow(new RuntimeException("Ошибка открытия сессии"));
+
+        UserDaoImpl userDao = new UserDaoImpl(mockSessionFactory);
+
+        assertThrows(RuntimeException.class, () -> userDao.save(new User()));
+    }
+
+
+    @Test
     public void findById() {
         User user = createTestUser();
 
@@ -125,6 +153,30 @@ public class UserDaoImplTest {
     }
 
     @Test
+    void update_catch() {
+        SessionFactory sf = Mockito.mock(SessionFactory.class);
+        Session session = Mockito.mock(Session.class);
+        Transaction tx = Mockito.mock(Transaction.class);
+        Mockito.when(sf.openSession()).thenReturn(session);
+        Mockito.when(session.beginTransaction()).thenReturn(tx);
+        Mockito.doThrow(new RuntimeException("Ошибка при обновлении пользователя")).when(session).merge(Mockito.any());
+        UserDaoImpl dao = new UserDaoImpl(sf);
+
+        assertThrows(RuntimeException.class, () -> dao.update(new User()));
+        Mockito.verify(tx).rollback();
+    }
+
+    @Test
+    void update_null() {
+        SessionFactory mockSessionFactory = Mockito.mock(SessionFactory.class);
+        Mockito.when(mockSessionFactory.openSession()).thenThrow(new RuntimeException("Ошибка до beginTransaction"));
+
+        UserDaoImpl dao = new UserDaoImpl(mockSessionFactory);
+
+        assertThrows(RuntimeException.class, () -> dao.update(new User()));
+    }
+
+    @Test
     public void deleteById() {
         UserDaoImpl userDao = new UserDaoImpl(sessionFactory);
         User user = createTestUser();
@@ -134,6 +186,46 @@ public class UserDaoImplTest {
 
         Optional<User> result = userDao.findById(user.getId());
         Assertions.assertFalse(result.isPresent());
+    }
+
+    @Test
+    void deleteById_catch() {
+        SessionFactory sf = Mockito.mock(SessionFactory.class);
+        Session session = Mockito.mock(Session.class);
+        Transaction tx = Mockito.mock(Transaction.class);
+        Mockito.when(sf.openSession()).thenReturn(session);
+        Mockito.when(session.beginTransaction()).thenReturn(tx);
+        Mockito.when(session.find(Mockito.eq(User.class), Mockito.any())).thenThrow(new RuntimeException("Ошибка при удалении пользователя с id"));
+        UserDaoImpl dao = new UserDaoImpl(sf);
+
+        assertThrows(RuntimeException.class, () -> dao.deleteById(1L));
+        Mockito.verify(tx).rollback();
+    }
+
+    @Test
+    void deleteById_null() {
+        SessionFactory sf = Mockito.mock(SessionFactory.class);
+        Mockito.when(sf.openSession()).thenThrow(new RuntimeException("Ошибка до транзакции"));
+
+        UserDaoImpl dao = new UserDaoImpl(sf);
+        assertThrows(RuntimeException.class, () -> dao.deleteById(1L));
+    }
+
+    @Test
+    void deleteById_else() {
+        SessionFactory sf = Mockito.mock(SessionFactory.class);
+        Session session = Mockito.mock(Session.class);
+        Transaction tx = Mockito.mock(Transaction.class);
+
+        Mockito.when(sf.openSession()).thenReturn(session);
+        Mockito.when(session.beginTransaction()).thenReturn(tx);
+        Mockito.when(session.find(User.class, 1L)).thenReturn(null);
+
+        UserDaoImpl dao = new UserDaoImpl(sf);
+        dao.deleteById(1L);
+
+        Mockito.verify(session, Mockito.never()).remove(Mockito.any());
+        Mockito.verify(tx).commit();
     }
 
     @Test
@@ -153,72 +245,7 @@ public class UserDaoImplTest {
     }
 
     @Test
-    public void existsByEmail() {
-        UserDaoImpl userDao = new UserDaoImpl(sessionFactory);
-        User user = createTestUser();
-        userDao.save(user);
-
-        Assertions.assertTrue(userDao.existsByEmail(user.getEmail()));
-        Assertions.assertFalse(userDao.existsByEmail("no-email@test.ru"));
-    }
-
-    @Test
-    void save_catch () {
-        SessionFactory mockSessionFactory = Mockito.mock(SessionFactory.class);
-        Session mockSession = Mockito.mock(Session.class);
-        Transaction mockTransaction = Mockito.mock(Transaction.class);
-
-        Mockito.when(mockSessionFactory.openSession()).thenReturn(mockSession);
-        Mockito.when(mockSession.beginTransaction()).thenReturn(mockTransaction);
-        Mockito.doThrow(new RuntimeException("Ошибка при сохранении пользователя")).when(mockSession).persist(Mockito.any());
-
-        UserDaoImpl userDao = new UserDaoImpl(mockSessionFactory);
-
-        assertThrows(RuntimeException.class, () -> userDao.save(new User()));
-        Mockito.verify(mockTransaction).rollback();
-    }
-
-    @Test
-    void findById_catch () {
-        SessionFactory sf = Mockito.mock(SessionFactory.class);
-        Session s = Mockito.mock(Session.class);
-        Mockito.when(sf.openSession()).thenReturn(s);
-        Mockito.when(s.find(Mockito.eq(User.class), Mockito.any())).thenThrow(new RuntimeException("Ошибка при поиске пользователя по id"));
-        UserDaoImpl dao = new UserDaoImpl(sf);
-
-        assertThrows(RuntimeException.class, () -> dao.findById(1L));
-    }
-
-    @Test
-    void update_catch () {
-        SessionFactory sf = Mockito.mock(SessionFactory.class);
-        Session session = Mockito.mock(Session.class);
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(sf.openSession()).thenReturn(session);
-        Mockito.when(session.beginTransaction()).thenReturn(tx);
-        Mockito.doThrow(new RuntimeException("Ошибка при обновлении пользователя")).when(session).merge(Mockito.any());
-        UserDaoImpl dao = new UserDaoImpl(sf);
-
-        assertThrows(RuntimeException.class, () -> dao.update(new User()));
-        Mockito.verify(tx).rollback();
-    }
-
-    @Test
-    void deleteById_catch () {
-        SessionFactory sf = Mockito.mock(SessionFactory.class);
-        Session session = Mockito.mock(Session.class);
-        Transaction tx = Mockito.mock(Transaction.class);
-        Mockito.when(sf.openSession()).thenReturn(session);
-        Mockito.when(session.beginTransaction()).thenReturn(tx);
-        Mockito.when(session.find(Mockito.eq(User.class), Mockito.any())).thenThrow(new RuntimeException("Ошибка при удалении пользователя с id"));
-        UserDaoImpl dao = new UserDaoImpl(sf);
-
-        assertThrows(RuntimeException.class, () -> dao.deleteById(1L));
-        Mockito.verify(tx).rollback();
-    }
-
-    @Test
-    void getAll_catch () {
+    void getAll_catch() {
         SessionFactory sf = Mockito.mock(SessionFactory.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(sf.openSession()).thenReturn(session);
@@ -230,7 +257,17 @@ public class UserDaoImplTest {
     }
 
     @Test
-    void existsByEmail_catch () {
+    public void existsByEmail() {
+        UserDaoImpl userDao = new UserDaoImpl(sessionFactory);
+        User user = createTestUser();
+        userDao.save(user);
+
+        Assertions.assertTrue(userDao.existsByEmail(user.getEmail()));
+        Assertions.assertFalse(userDao.existsByEmail("no-email@test.ru"));
+    }
+
+    @Test
+    void existsByEmail_catch() {
         SessionFactory sf = Mockito.mock(SessionFactory.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(sf.openSession()).thenReturn(session);
@@ -239,5 +276,16 @@ public class UserDaoImplTest {
         UserDaoImpl dao = new UserDaoImpl(sf);
 
         assertThrows(RuntimeException.class, () -> dao.existsByEmail("test@test.ru"));
+    }
+
+    @Test
+    void findById_catch() {
+        SessionFactory sf = Mockito.mock(SessionFactory.class);
+        Session s = Mockito.mock(Session.class);
+        Mockito.when(sf.openSession()).thenReturn(s);
+        Mockito.when(s.find(Mockito.eq(User.class), Mockito.any())).thenThrow(new RuntimeException("Ошибка при поиске пользователя по id"));
+        UserDaoImpl dao = new UserDaoImpl(sf);
+
+        assertThrows(RuntimeException.class, () -> dao.findById(1L));
     }
 }
