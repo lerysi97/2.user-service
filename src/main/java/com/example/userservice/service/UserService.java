@@ -1,41 +1,20 @@
 package com.example.userservice.service;
 
-import com.example.userservice.dao.UserDao;
-import com.example.userservice.model.User;
-import java.util.Optional;
+import com.example.userservice.dto.UserRegistDto;
+import com.example.userservice.dto.UserVozvratDto;
 
-public class UserService {
+import java.util.List;
 
-    private final UserDao dao;
+public interface UserService{
 
-    public UserService(UserDao dao) {
-        this.dao = dao;
-    }
+    UserVozvratDto createUser(UserRegistDto userRegistDto);
 
-    public void createUser(User user) {
-        dao.save(user);
-    }
+    UserVozvratDto findUserById(Long userId);
 
-    public Optional<User> findUserById(Long userId) {
-        return dao.findById(userId);
-    }
+    UserVozvratDto deleteUser(Long userId);
 
-    public Optional<User> deleteUser(Long userId) {
-        Optional<User> userOptional = dao.findById(userId);
-        if (userOptional.isPresent()) {
-            dao.deleteById(userId);
-            return userOptional;
-        }
-        return Optional.empty();
-    }
+    UserVozvratDto updateUser (Long userId, UserRegistDto userRegistDto);
 
-    public Optional<User> updateUser (Long userId) {
-        Optional<User> userOptional = dao.findById(userId);
-        if (userOptional.isPresent()) {
-            dao.update(userOptional.get());
-            return userOptional;
-        }
-        return Optional.empty();
-    }
+    List<UserVozvratDto> getAllUsers();
 }
 
